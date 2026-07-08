@@ -34,12 +34,15 @@
       </a>
 
       <nav id="navmenu" class="navmenu">
-        <ul>
-          <li><a href="index.html">Home</a></li>
+       <ul>
+          <li><a href="index.html#hero" >Home</a></li>
           <li><a href="index.html#about">About</a></li>
           <li><a href="index.html#services">Services</a></li>
           <li><a href="index.html#portfolio">Gallery</a></li>
           <li><a href="register.html" class="active">Register</a></li>
+          <li><a href="index.html#team">Team</a></li>
+         
+          </li>
           <li><a href="index.html#contact">Contact</a></li>
         </ul>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
@@ -191,12 +194,6 @@
 
       if (!form || !message || !updatesCheckbox) return;
 
-      const saveLocally = (registration) => {
-        const existing = JSON.parse(localStorage.getItem('zocRegistrations') || '[]');
-        existing.unshift(registration);
-        localStorage.setItem('zocRegistrations', JSON.stringify(existing));
-      };
-
       form.addEventListener('submit', (event) => {
         event.preventDefault();
 
@@ -217,29 +214,32 @@
           message.className = 'col-12 form-message show';
         };
 
-        if (webAppUrl && webAppUrl !== 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
-          fetch(webAppUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-            },
-            body: payload.toString()
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error('Network response was not ok');
-              }
-              saveLocally(registration);
-              showSuccess('Registration submitted successfully and sent to Google Sheets. Welcome to ZOC CUT!');
-            })
-            .catch(() => {
-              saveLocally(registration);
-              showSuccess('Registration saved locally. Please add your Google Apps Script web app URL to send it to Google Sheets.');
-            });
-        } else {
-          saveLocally(registration);
-          showSuccess('Registration saved locally. Your Google Apps Script endpoint is ready to receive submissions.');
+        const showError = (text) => {
+          message.textContent = text;
+          message.className = 'col-12 form-message error';
+        };
+
+        if (!webAppUrl || webAppUrl === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
+          showError('Google Apps Script web app URL is not configured. Please contact the administrator.');
+          return;
         }
+
+        fetch(webAppUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+          },
+          body: payload.toString()
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            showSuccess('Registration submitted successfully and sent to Google Sheets. Welcome to ZOC CUT!');
+          })
+          .catch((error) => {
+            showError('Failed to submit registration. Please check your connection and try again.');
+          });
       });
     });
   </script>
