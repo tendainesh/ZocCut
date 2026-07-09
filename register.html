@@ -22,6 +22,34 @@
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
   <link href="assets/css/main.css" rel="stylesheet">
+  <style>
+    .popup-success {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      background: #0d6efd;
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      display: none;
+      max-width: 320px;
+      font-weight: 600;
+    }
+
+    .popup-success.show {
+      display: block;
+      animation: fadeInOut 3.5s ease forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-10px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+  </style>
 </head>
 
 <body class="register-page">
@@ -35,13 +63,13 @@
 
       <nav id="navmenu" class="navmenu">
            <ul>
-          <li><a href="#hero" class="active">Home</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#services">Services</a></li>
-          <li><a href="#portfolio">Gallery</a></li>
-          <li><a href="#team">Team</a></li>
-          <li><a href="#contact">Contact</a></li>
-          <li><a href="register.html">Register</a></li>
+          <li><a href="index.html#hero">Home</a></li>
+          <li><a href="index.html#about">About</a></li>
+          <li><a href="index.html#services">Services</a></li>
+          <li><a href="index.html#portfolio">Gallery</a></li>
+          <li><a href="index.html#team">Team</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+          <li><a href="register.html" class="active">Register</a></li>
         </ul>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
@@ -170,6 +198,7 @@
     </div>
   </footer>
 
+  <div id="successPopup" class="popup-success" role="status" aria-live="polite"></div>
   <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
   <div id="preloader"></div>
 
@@ -184,11 +213,15 @@
   <script src="assets/js/main.js"></script>
 
   <script>
+    window.GOOGLE_SHEETS_WEBAPP_URL = window.GOOGLE_SHEETS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbwqMg-gf5thAUTeCGXD3vPcDiGZT98Kc2cj7zoqE5lGIE8rE3Uxi9qUFNoPveQD7Z3v/exec';
+  </script>
+
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('registerForm');
       const message = document.getElementById('formMessage');
       const updatesCheckbox = document.getElementById('updates');
-      const webAppUrl = window.GOOGLE_SHEETS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbwqMg-gf5thAUTeCGXD3vPcDiGZT98Kc2cj7zoqE5lGIE8rE3Uxi9qUFNoPveQD7Z3v/exec';
+      const webAppUrl = (window.GOOGLE_SHEETS_WEBAPP_URL || '').trim();
 
       if (!form || !message || !updatesCheckbox) return;
 
@@ -200,16 +233,21 @@
         registration.updates = updatesCheckbox.checked;
         registration.registeredAt = new Date().toLocaleString();
 
-        const payload = new URLSearchParams();
-        Object.entries(registration).forEach(([key, value]) => {
-          payload.append(key, String(value));
-        });
+        const payload = JSON.stringify(registration);
 
         const showSuccess = (text) => {
           form.reset();
           updatesCheckbox.checked = true;
           message.textContent = text;
           message.className = 'col-12 form-message show';
+
+          const popup = document.getElementById('successPopup');
+          if (popup) {
+            popup.textContent = text;
+            popup.classList.add('show');
+            clearTimeout(window.successPopupTimer);
+            window.successPopupTimer = setTimeout(() => popup.classList.remove('show'), 3500);
+          }
         };
 
         const showError = (text) => {
@@ -225,9 +263,9 @@
         fetch(webAppUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            'Content-Type': 'application/json;charset=UTF-8'
           },
-          body: payload.toString()
+          body: payload
         })
           .then((response) => {
             if (!response.ok) {
